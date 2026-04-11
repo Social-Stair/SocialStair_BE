@@ -6,10 +6,10 @@ const { updateStats, updateManualStats } = require('./services/statsService');
 initializeApp();
 
 exports.onTagCreated = onDocumentCreated('tags/{docId}', async (event) => {
-  const { cardUid, floor, inputType } = event.data.data();
+  const { cardUid, floor, inputType, fromFloor, toFloor } = event.data.data();
 
   if (inputType === 'manual') {
-    await updateManualStats(floor);
+    await updateManualStats(fromFloor, toFloor);
     return;
   }
 
