@@ -22,7 +22,7 @@ exports.onTagCreated = onDocumentCreated('tags/{docId}', async (event) => {
 
   const { floorsClimbed, sectionKey } = calcSection(prevTag.floor, floor);
   if (floorsClimbed === 0) return;
-  if (!isValidSession(floorsClimbed)) return; // 6층 초과 무효
+  if (!isValidSession(floorsClimbed)) return;
 
-  await updateStats(floorsClimbed, sectionKey);
+  await updateStats(floorsClimbed, sectionKey, cardUid); // cardUid 추가
 });
