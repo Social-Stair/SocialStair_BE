@@ -1,6 +1,10 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { initializeApp } = require('firebase-admin/app');
-const { getPrevTag, calcSection } = require('./services/tagService');
+const {
+  getPrevTag,
+  calcSection,
+  isValidSession,
+} = require('./services/tagService');
 const { updateStats, updateManualStats } = require('./services/statsService');
 
 initializeApp();
@@ -18,6 +22,7 @@ exports.onTagCreated = onDocumentCreated('tags/{docId}', async (event) => {
 
   const { floorsClimbed, sectionKey } = calcSection(prevTag.floor, floor);
   if (floorsClimbed === 0) return;
+  if (!isValidSession(floorsClimbed)) return; // 6층 초과 무효
 
   await updateStats(floorsClimbed, sectionKey);
 });
