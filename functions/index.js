@@ -24,5 +24,5 @@ exports.onTagCreated = onDocumentCreated('tags/{docId}', async (event) => {
   if (floorsClimbed === 0) return;
   if (!isValidSession(floorsClimbed)) return;
 
-  await updateStats(floorsClimbed, sectionKey, cardUid); // cardUid 추가
+  await updateStats(floorsClimbed, sectionKey, cardUid, floor);
 });
