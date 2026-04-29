@@ -2,22 +2,56 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 태그 이벤트 raw 데이터 (앱이 씀)
     match /tags/{docId} {
       allow write: if true;
       allow read: if false;
     }
 
+    // 일별 통계 (전광판이 읽음)
     match /stats/{docId} {
       allow read: if true;
       allow write: if false;
     }
 
+    // 단말기 설정 (앱이 읽음)
     match /devices/{docId} {
       allow read: if true;
       allow write: if false;
     }
 
+    // 일별 유저 통계 (전광판이 읽음)
     match /userStats/{docId}/{subcollection}/{cardId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 주간 통계 (전광판이 읽음)
+    match /weeklyStats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 주간 유저 통계 (전광판이 읽음)
+    match /weeklyUserStats/{docId}/{subcollection}/{userId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 사용자 정보 (Cloud Functions이 읽음)
+    match /users/{cardUid} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 팀 정보 (전광판이 읽음)
+    match /testTeams/{teamId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 주간 목표 설정 (Cloud Functions이 읽음)
+    match /weeklyConfig/{docId} {
       allow read: if true;
       allow write: if false;
     }
