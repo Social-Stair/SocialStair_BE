@@ -1,16 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "devices",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "androidId",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "tags",
       "queryScope": "COLLECTION",
       "fields": [
