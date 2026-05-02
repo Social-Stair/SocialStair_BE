@@ -16,14 +16,15 @@ const getWeeklyConfig = async () => {
 // NFC 태깅 통계 업데이트
 // - 일별 stats 업데이트
 // - 주간 weeklyStats 업데이트 (팀별 기여, 보스 HP)
-// - 주간 weeklyUserStats 업데이트 (개인 기록)
+// - 주간 weeklyUserStats 업데이트 (개인 기록 + 닉네임)
 // ──────────────────────────────────────────
 const updateStats = async (
   floorsClimbed,
   sectionKey,
   cardUid,
   currentFloor,
-  team
+  team,
+  nickname
 ) => {
   const db = getFirestore();
   const today = getTodayKey();
@@ -95,6 +96,7 @@ const updateStats = async (
         floors: FieldValue.increment(floorsClimbed),
         count: FieldValue.increment(1),
         team,
+        nickname, // 닉네임 추가
         lastFloor: currentFloor,
         updatedAt: FieldValue.serverTimestamp(),
       },

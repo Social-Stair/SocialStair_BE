@@ -6,7 +6,7 @@ const {
   getPrevTag,
   calcSection,
   isValidSession,
-  getUserTeam,
+  getUserInfo,
 } = require('./services/tagService');
 const { updateStats, updateManualStats } = require('./services/statsService');
 const {
@@ -38,10 +38,13 @@ exports.onTagCreated = onDocumentCreated('tags/{docId}', async (event) => {
   if (floorsClimbed === 0) return;
   if (!isValidSession(floorsClimbed)) return;
 
-  const team = await getUserTeam(cardUid);
-  if (!team) return;
+  // 팀 정보 + 닉네임 조회
+  const userInfo = await getUserInfo(cardUid);
+  if (!userInfo) return; // /users에 등록되지 않은 카드
 
-  await updateStats(floorsClimbed, sectionKey, cardUid, floor, team);
+  const { team, nickname } = userInfo;
+
+  await updateStats(floorsClimbed, sectionKey, cardUid, floor, team, nickname);
 });
 
 // ──────────────────────────────────────────

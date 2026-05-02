@@ -52,14 +52,15 @@ const isValidSession = (floorsClimbed) => {
 };
 
 // ──────────────────────────────────────────
-// 사용자 팀 정보 조회
-// /users/{cardUid} 에서 team 필드 반환
+// 사용자 팀 정보 + 닉네임 조회
+// /users/{cardUid} 에서 team, nickname 반환
 // ──────────────────────────────────────────
-const getUserTeam = async (cardUid) => {
+const getUserInfo = async (cardUid) => {
   const db = getFirestore();
   const userDoc = await db.collection('users').doc(cardUid).get();
   if (!userDoc.exists) return null;
-  return userDoc.data().team; // 예) "floor-2"
+  const { team, nickname } = userDoc.data();
+  return { team, nickname }; // 예) { team: "floor-2", nickname: "용사1" }
 };
 
-module.exports = { getPrevTag, calcSection, isValidSession, getUserTeam };
+module.exports = { getPrevTag, calcSection, isValidSession, getUserInfo };
