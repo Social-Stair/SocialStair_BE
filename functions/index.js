@@ -11,6 +11,10 @@ const {
   updateFcmTokenHandler,
 } = require('./routes/authRoutes');
 const { setGoalHandler, getGoalHandler } = require('./routes/goalRoutes');
+const {
+  recordStairsHandler,
+  getRecordsHandler,
+} = require('./routes/stairsRoutes');
 
 initializeApp();
 
@@ -26,6 +30,12 @@ exports.updateFcmToken = updateFcmTokenHandler;
 // ──────────────────────────────────────────
 exports.setGoal = setGoalHandler;
 exports.getGoal = getGoalHandler;
+
+// ──────────────────────────────────────────
+// 계단 기록 API
+// ──────────────────────────────────────────
+exports.recordStairs = recordStairsHandler;
+exports.getRecords = getRecordsHandler;
 
 // ──────────────────────────────────────────
 // 성찰일지 API
