@@ -57,7 +57,7 @@ const login = async (email, password) => {
 
   // Firebase Auth REST API로 로그인 (토큰 발급)
   const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API_KEY}`,
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

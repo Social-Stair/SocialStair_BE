@@ -10,6 +10,7 @@ const {
   loginHandler,
   updateFcmTokenHandler,
 } = require('./routes/authRoutes');
+const { setGoalHandler, getGoalHandler } = require('./routes/goalRoutes');
 
 initializeApp();
 
@@ -19,6 +20,12 @@ initializeApp();
 exports.register = registerHandler;
 exports.login = loginHandler;
 exports.updateFcmToken = updateFcmTokenHandler;
+
+// ──────────────────────────────────────────
+// 목표 설정 API
+// ──────────────────────────────────────────
+exports.setGoal = setGoalHandler;
+exports.getGoal = getGoalHandler;
 
 // ──────────────────────────────────────────
 // 성찰일지 API
