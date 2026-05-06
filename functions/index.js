@@ -23,6 +23,7 @@ const {
   afternoonReminder,
   eveningReminder,
   wednesdayCheck,
+  weeklyReset,
 } = require('./schedulers/notificationScheduler');
 
 initializeApp();
@@ -64,6 +65,7 @@ exports.morningReminder = morningReminder;
 exports.afternoonReminder = afternoonReminder;
 exports.eveningReminder = eveningReminder;
 exports.wednesdayCheck = wednesdayCheck;
+exports.weeklyReset = weeklyReset;
 
 // ──────────────────────────────────────────
 // 성찰일지 API

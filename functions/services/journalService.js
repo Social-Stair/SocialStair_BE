@@ -3,12 +3,12 @@ const { getTodayKey } = require('../utils/dateUtils');
 
 // ──────────────────────────────────────────
 // 성찰일지 작성
-// /journals/{cardUid}/entries/{docId}
+// /journals/{userId}/entries/{entryId}
 // ──────────────────────────────────────────
-const createJournal = async (cardUid, mood, content) => {
+const createJournal = async (userId, mood, content) => {
   const db = getFirestore();
   const entry = {
-    cardUid,
+    userId,
     date: getTodayKey(),
     mood,
     content,
@@ -18,7 +18,7 @@ const createJournal = async (cardUid, mood, content) => {
 
   const ref = await db
     .collection('journals')
-    .doc(cardUid)
+    .doc(userId)
     .collection('entries')
     .add(entry);
 
@@ -27,13 +27,13 @@ const createJournal = async (cardUid, mood, content) => {
 
 // ──────────────────────────────────────────
 // 성찰일지 목록 조회
-// cardUid 기준, 최신순 정렬
+// userId 기준, 최신순 정렬
 // ──────────────────────────────────────────
-const getJournals = async (cardUid) => {
+const getJournals = async (userId) => {
   const db = getFirestore();
   const snap = await db
     .collection('journals')
-    .doc(cardUid)
+    .doc(userId)
     .collection('entries')
     .orderBy('createdAt', 'desc')
     .get();
@@ -44,11 +44,11 @@ const getJournals = async (cardUid) => {
 // ──────────────────────────────────────────
 // 성찰일지 수정
 // ──────────────────────────────────────────
-const updateJournal = async (cardUid, entryId, mood, content) => {
+const updateJournal = async (userId, entryId, mood, content) => {
   const db = getFirestore();
   await db
     .collection('journals')
-    .doc(cardUid)
+    .doc(userId)
     .collection('entries')
     .doc(entryId)
     .update({
@@ -61,11 +61,11 @@ const updateJournal = async (cardUid, entryId, mood, content) => {
 // ──────────────────────────────────────────
 // 성찰일지 삭제
 // ──────────────────────────────────────────
-const deleteJournal = async (cardUid, entryId) => {
+const deleteJournal = async (userId, entryId) => {
   const db = getFirestore();
   await db
     .collection('journals')
-    .doc(cardUid)
+    .doc(userId)
     .collection('entries')
     .doc(entryId)
     .delete();
