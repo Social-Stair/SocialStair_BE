@@ -2,57 +2,64 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 태그 이벤트 raw 데이터 (앱이 씀)
-    match /tags/{docId} {
-      allow write: if true;
-      allow read: if false;
+    // 인증된 유저만 접근 가능
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // 일별 통계 (전광판이 읽음)
-    match /stats/{docId} {
-      allow read: if true;
+    // 본인 데이터만 접근 가능
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // 유저 정보
+    // 본인만 읽기 가능, 쓰기 불가 (Cloud Functions이 씀)
+    match /users/{userId} {
+      allow read: if isOwner(userId);
       allow write: if false;
     }
 
-    // 단말기 설정 (앱이 읽음)
-    match /devices/{docId} {
-      allow read: if true;
+    // 주간 목표
+    // 본인 것만 읽기 가능
+    match /weeklyGoals/{docId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
       allow write: if false;
     }
 
-    // 일별 유저 통계 (전광판이 읽음)
-    match /userStats/{docId}/{subcollection}/{cardId} {
-      allow read: if true;
+    // 계단 기록
+    // 본인 것만 읽기 가능
+    match /stairRecords/{docId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
       allow write: if false;
     }
 
-    // 주간 통계 (전광판이 읽음)
-    match /weeklyStats/{docId} {
-      allow read: if true;
+    // 성찰일지
+    // 본인 것만 읽기/쓰기 가능
+    match /journals/{userId}/entries/{entryId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 홈화면 통계용 유저 목록
+    // 인증된 유저면 전체 읽기 가능
+    match /users/{userId} {
+      allow read: if isAuthenticated();
       allow write: if false;
     }
 
-    // 주간 유저 통계 (전광판이 읽음)
-    match /weeklyUserStats/{docId}/{subcollection}/{userId} {
-      allow read: if true;
+    // 출근 여부
+    // 본인 것만 읽기/쓰기 가능
+    match /userDailyStatus/{docId} {
+      allow read, write: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
       allow write: if false;
     }
 
-    // 사용자 정보 (Cloud Functions이 읽음)
-    match /users/{cardUid} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // 팀 정보 (전광판이 읽음)
-    match /testTeams/{teamId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // 주간 목표 설정 (Cloud Functions이 읽음)
-    match /weeklyConfig/{docId} {
-      allow read: if true;
+    // 달성 멘트
+    // 인증된 유저면 읽기 가능
+    match /milestoneMessages/{docId} {
+      allow read: if isAuthenticated();
       allow write: if false;
     }
   }
