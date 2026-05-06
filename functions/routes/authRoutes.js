@@ -8,13 +8,13 @@ const { register, login, updateFcmToken } = require('../services/authService');
 // ──────────────────────────────────────────
 const registerHandler = onRequest(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-  const { email, password, nickname, floor, team } = req.body;
-  if (!email || !password || !nickname || !floor || !team) {
+  const { email, password, nickname, floor } = req.body;
+  if (!email || !password || !nickname || !floor) {
     return res.status(400).json({ error: '모든 필드를 입력해주세요' });
   }
 
   try {
-    const user = await register(email, password, nickname, floor, team);
+    const user = await register(email, password, nickname, floor);
     res.status(200).json(user);
   } catch (e) {
     res.status(400).json({ error: e.message });

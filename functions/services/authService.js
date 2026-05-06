@@ -6,7 +6,7 @@ const { getAuth } = require('firebase-admin/auth');
 // Firebase Auth에 유저 생성 후
 // /users/{userId}에 추가 정보 저장
 // ──────────────────────────────────────────
-const register = async (email, password, nickname, floor, team) => {
+const register = async (email, password, nickname, floor) => {
   const auth = getAuth();
   const db = getFirestore();
 
@@ -22,10 +22,7 @@ const register = async (email, password, nickname, floor, team) => {
   }
 
   // Firebase Auth에 유저 생성
-  const userRecord = await auth.createUser({
-    email,
-    password,
-  });
+  const userRecord = await auth.createUser({ email, password });
 
   // Firestore에 추가 정보 저장
   await db.collection('users').doc(userRecord.uid).set({
@@ -33,7 +30,6 @@ const register = async (email, password, nickname, floor, team) => {
     email,
     nickname,
     floor,
-    team,
     fcmToken: null,
     createdAt: FieldValue.serverTimestamp(),
   });
@@ -43,7 +39,6 @@ const register = async (email, password, nickname, floor, team) => {
     email,
     nickname,
     floor,
-    team,
   };
 };
 
@@ -85,7 +80,6 @@ const login = async (email, password) => {
     email: userData.email,
     nickname: userData.nickname,
     floor: userData.floor,
-    team: userData.team,
   };
 };
 

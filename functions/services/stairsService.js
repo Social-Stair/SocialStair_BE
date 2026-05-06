@@ -1,29 +1,12 @@
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getWeekKey } = require('../utils/dateUtils');
-
-// ──────────────────────────────────────────
-// 달성 멘트 조회
-// /milestoneMessages에서 type 기준 랜덤 반환
-// ──────────────────────────────────────────
-const getMilestoneMessage = async (type) => {
-  const db = getFirestore();
-  const snap = await db
-    .collection('milestoneMessages')
-    .where('type', '==', type)
-    .get();
-
-  if (snap.empty) return null;
-
-  const messages = snap.docs.map((doc) => doc.data());
-  const random = messages[Math.floor(Math.random() * messages.length)];
-  return { title: random.title, message: random.message };
-};
+const { sendToUser, getMilestoneMessage } = require('./notificationService');
 
 // ──────────────────────────────────────────
 // 계단 기록 입력
 // - records 리스트로 받아서 저장
 // - withColleague true면 층수 2배 반영
-// - 30%, 60% 달성 시 milestone 반환
+// - 1/3, 2/3, 100% 달성 시 milestone 반환
 // ──────────────────────────────────────────
 const recordStairs = async (userId, records) => {
   const db = getFirestore();
@@ -52,28 +35,52 @@ const recordStairs = async (userId, records) => {
     0
   );
 
-  // 목표 조회
-  const goalDoc = await db.collection('weeklyGoals').doc(goalDocId).get();
+  // 목표 + 유저 조회
+  const [goalDoc, userDoc] = await Promise.all([
+    db.collection('weeklyGoals').doc(goalDocId).get(),
+    db.collection('users').doc(userId).get(),
+  ]);
+
   if (!goalDoc.exists) throw new Error('목표를 먼저 설정해주세요');
 
   const { goalFloors, currentFloors } = goalDoc.data();
+  const { fcmToken } = userDoc.data();
   const prevFloors = currentFloors || 0;
   const newFloors = prevFloors + addedFloors;
   const achievementRate = Math.round((newFloors / goalFloors) * 100);
 
-  // milestone 체크
+  // milestone 체크 (1/3, 2/3, 100%)
   let milestone = null;
-  const prev = Math.round((prevFloors / goalFloors) * 100);
-  if (prev < 30 && achievementRate >= 30) {
-    milestone = await getMilestoneMessage('30');
-  } else if (prev < 60 && achievementRate >= 60) {
-    milestone = await getMilestoneMessage('60');
+  const prevRate = prevFloors / goalFloors;
+  const currentRate = newFloors / goalFloors;
+
+  if (prevRate < 1 / 3 && currentRate >= 1 / 3) {
+    milestone = {
+      title: '🎉 목표의 1/3 달성!',
+      body: `목표층수 ${goalFloors}층 중 ${Math.floor(
+        goalFloors / 3
+      )}층을 달성하셨네요! 계단 오르기를 통해 몸을 움직이면 머리를 맑게하여 기분 전환에 도움이 됩니다. 좋은 흐름을 타서, 3층을 추가로 도전해 보는 것은 어떨까요?`,
+    };
+    if (fcmToken) await sendToUser(fcmToken, milestone.title, milestone.body);
+  } else if (prevRate < 2 / 3 && currentRate >= 2 / 3) {
+    milestone = {
+      title: '🎉 목표의 2/3 달성!',
+      body: `목표층수 ${goalFloors}층 중 ${Math.floor(
+        (goalFloors * 2) / 3
+      )}층에 도달했습니다! 일상에서 계단을 오르는 것만으로도 전체 사망 위험이 낮아지는 경향이 보고됩니다. 남은 층은 호흡을 조금 가다듬고 자신의 페이스에 맞추면서 목표를 이뤄보세요!`,
+    };
+    if (fcmToken) await sendToUser(fcmToken, milestone.title, milestone.body);
+  } else if (prevRate < 1 && currentRate >= 1) {
+    milestone = {
+      title: '🏆 목표 달성!',
+      body: `축하합니다. 이번주 목표했던 ${goalFloors}층을 모두 올랐습니다. 다음주에도 이 모습을 유지해 주세요!`,
+    };
+    if (fcmToken) await sendToUser(fcmToken, milestone.title, milestone.body);
   }
 
   // 기록 저장
   const recordRef = db.collection('stairRecords').doc();
   await Promise.all([
-    // 기록 저장
     recordRef.set({
       userId,
       weekKey,
@@ -81,7 +88,6 @@ const recordStairs = async (userId, records) => {
       totalFloors: addedFloors,
       createdAt: FieldValue.serverTimestamp(),
     }),
-    // 목표 현재 층수 업데이트
     db
       .collection('weeklyGoals')
       .doc(goalDocId)
@@ -102,7 +108,7 @@ const recordStairs = async (userId, records) => {
 
 // ──────────────────────────────────────────
 // 계단 기록 조회
-// userId + weekKey 기준
+// userId + weekKey 기준, 최신순 정렬
 // ──────────────────────────────────────────
 const getRecords = async (userId, weekKey) => {
   const db = getFirestore();

@@ -3,8 +3,7 @@ const { getWeekKey } = require('../utils/dateUtils');
 
 // ──────────────────────────────────────────
 // 홈화면 통계 조회
-// A팀, B팀 각각 목표 합산, 현재 층수, 달성률
-// 팀원별 개인 기록 포함
+// 개인별 목표 + 전체 합산 공동 목표
 // ──────────────────────────────────────────
 const getHomeStats = async (weekKey) => {
   const db = getFirestore();
@@ -25,20 +24,21 @@ const getHomeStats = async (weekKey) => {
     goalsMap[data.userId] = data;
   });
 
-  // 팀별 집계
-  const teams = {
-    A: { goalFloors: 0, currentFloors: 0, members: [] },
-    B: { goalFloors: 0, currentFloors: 0, members: [] },
-  };
+  // 개인별 집계
+  let totalGoalFloors = 0;
+  let totalCurrentFloors = 0;
 
-  users.forEach((user) => {
+  const members = users.map((user) => {
     const goal = goalsMap[user.userId] || { goalFloors: 0, currentFloors: 0 };
     const achievementRate =
       goal.goalFloors > 0
         ? Math.round((goal.currentFloors / goal.goalFloors) * 100)
         : 0;
 
-    const member = {
+    totalGoalFloors += goal.goalFloors;
+    totalCurrentFloors += goal.currentFloors;
+
+    return {
       userId: user.userId,
       nickname: user.nickname,
       floor: user.floor,
@@ -46,32 +46,25 @@ const getHomeStats = async (weekKey) => {
       currentFloors: goal.currentFloors,
       achievementRate,
     };
-
-    if (user.team === 'A') {
-      teams.A.goalFloors += goal.goalFloors;
-      teams.A.currentFloors += goal.currentFloors;
-      teams.A.members.push(member);
-    } else if (user.team === 'B') {
-      teams.B.goalFloors += goal.goalFloors;
-      teams.B.currentFloors += goal.currentFloors;
-      teams.B.members.push(member);
-    }
   });
 
-  // 팀 달성률 계산
-  teams.A.achievementRate =
-    teams.A.goalFloors > 0
-      ? Math.round((teams.A.currentFloors / teams.A.goalFloors) * 100)
-      : 0;
-  teams.B.achievementRate =
-    teams.B.goalFloors > 0
-      ? Math.round((teams.B.currentFloors / teams.B.goalFloors) * 100)
+  // 공동 목표 달성률
+  const totalAchievementRate =
+    totalGoalFloors > 0
+      ? Math.round((totalCurrentFloors / totalGoalFloors) * 100)
       : 0;
 
   return {
     weekKey,
     totalParticipants: users.length,
-    teams,
+    // 공동 목표
+    sharedGoal: {
+      goalFloors: totalGoalFloors,
+      currentFloors: totalCurrentFloors,
+      achievementRate: totalAchievementRate,
+    },
+    // 개인별 기록
+    members,
   };
 };
 

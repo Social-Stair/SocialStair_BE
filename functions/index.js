@@ -16,6 +16,14 @@ const {
   getRecordsHandler,
 } = require('./routes/stairsRoutes');
 const { getHomeStatsHandler } = require('./routes/statsRoutes');
+const { skipTodayHandler } = require('./routes/dailyStatusRoutes');
+const {
+  weeklyGoalReminder,
+  morningReminder,
+  afternoonReminder,
+  eveningReminder,
+  wednesdayCheck,
+} = require('./schedulers/notificationScheduler');
 
 initializeApp();
 
@@ -42,6 +50,20 @@ exports.getRecords = getRecordsHandler;
 // 홈화면 통계 API
 // ──────────────────────────────────────────
 exports.getHomeStats = getHomeStatsHandler;
+
+// ──────────────────────────────────────────
+// 출근 여부 API
+// ──────────────────────────────────────────
+exports.skipToday = skipTodayHandler;
+
+// ──────────────────────────────────────────
+// 알림 스케줄러
+// ──────────────────────────────────────────
+exports.weeklyGoalReminder = weeklyGoalReminder;
+exports.morningReminder = morningReminder;
+exports.afternoonReminder = afternoonReminder;
+exports.eveningReminder = eveningReminder;
+exports.wednesdayCheck = wednesdayCheck;
 
 // ──────────────────────────────────────────
 // 성찰일지 API
