@@ -199,10 +199,38 @@ const wednesdayCheck = onSchedule(
   }
 );
 
+// ──────────────────────────────────────────
+// 일요일 00:00 (KST) 주간 리셋
+// UTC 00:00 (일요일) = KST 19:00 (일요일)
+// weeklyGoals currentFloors 초기화
+// ──────────────────────────────────────────
+const weeklyReset = onSchedule(
+  { schedule: '0 10 * * 0', timeZone: 'UTC' },
+  async () => {
+    const db = getFirestore();
+    const weekKey = getWeekKey();
+
+    // 이번 주 모든 목표 currentFloors 초기화
+    const goalsSnap = await db
+      .collection('weeklyGoals')
+      .where('weekKey', '==', weekKey)
+      .get();
+
+    const batch = db.batch();
+    goalsSnap.docs.forEach((doc) => {
+      batch.update(doc.ref, { currentFloors: 0 });
+    });
+    await batch.commit();
+
+    console.log(`주간 리셋 완료: ${weekKey}`);
+  }
+);
+
 module.exports = {
   weeklyGoalReminder,
   morningReminder,
   afternoonReminder,
   eveningReminder,
   wednesdayCheck,
+  weeklyReset,
 };

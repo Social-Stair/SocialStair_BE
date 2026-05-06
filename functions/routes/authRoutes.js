@@ -4,7 +4,7 @@ const { register, login, updateFcmToken } = require('../services/authService');
 // ──────────────────────────────────────────
 // 회원가입
 // POST /register
-// body: { email, password, nickname, floor, team }
+// body: { email, password, nickname, floor }
 // ──────────────────────────────────────────
 const registerHandler = onRequest(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');

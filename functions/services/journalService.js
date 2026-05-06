@@ -5,12 +5,12 @@ const { getTodayKey } = require('../utils/dateUtils');
 // 성찰일지 작성
 // /journals/{userId}/entries/{entryId}
 // ──────────────────────────────────────────
-const createJournal = async (userId, mood, content) => {
+const createJournal = async (userId, satisfaction, content) => {
   const db = getFirestore();
   const entry = {
     userId,
     date: getTodayKey(),
-    mood,
+    satisfaction,
     content,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -44,7 +44,7 @@ const getJournals = async (userId) => {
 // ──────────────────────────────────────────
 // 성찰일지 수정
 // ──────────────────────────────────────────
-const updateJournal = async (userId, entryId, mood, content) => {
+const updateJournal = async (userId, entryId, satisfaction, content) => {
   const db = getFirestore();
   await db
     .collection('journals')
@@ -52,7 +52,7 @@ const updateJournal = async (userId, entryId, mood, content) => {
     .collection('entries')
     .doc(entryId)
     .update({
-      mood,
+      satisfaction,
       content,
       updatedAt: FieldValue.serverTimestamp(),
     });
