@@ -15,6 +15,7 @@ const {
   recordStairsHandler,
   getRecordsHandler,
 } = require('./routes/stairsRoutes');
+const { getHomeStatsHandler } = require('./routes/statsRoutes');
 
 initializeApp();
 
@@ -36,6 +37,11 @@ exports.getGoal = getGoalHandler;
 // ──────────────────────────────────────────
 exports.recordStairs = recordStairsHandler;
 exports.getRecords = getRecordsHandler;
+
+// ──────────────────────────────────────────
+// 홈화면 통계 API
+// ──────────────────────────────────────────
+exports.getHomeStats = getHomeStatsHandler;
 
 // ──────────────────────────────────────────
 // 성찰일지 API
