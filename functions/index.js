@@ -8,6 +8,7 @@ const {
 const {
   registerHandler,
   loginHandler,
+  refreshTokenHandler,
   updateFcmTokenHandler,
 } = require('./routes/authRoutes');
 const { setGoalHandler, getGoalHandler } = require('./routes/goalRoutes');
@@ -33,6 +34,7 @@ initializeApp();
 // ──────────────────────────────────────────
 exports.register = registerHandler;
 exports.login = loginHandler;
+exports.refreshToken = refreshTokenHandler;
 exports.updateFcmToken = updateFcmTokenHandler;
 
 // ──────────────────────────────────────────

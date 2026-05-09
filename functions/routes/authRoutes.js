@@ -1,5 +1,10 @@
 const { onRequest } = require('firebase-functions/v2/https');
-const { register, login, updateFcmToken } = require('../services/authService');
+const {
+  register,
+  login,
+  refreshToken,
+  updateFcmToken,
+} = require('../services/authService');
 
 // ──────────────────────────────────────────
 // 회원가입
@@ -42,6 +47,26 @@ const loginHandler = onRequest(async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// 토큰 갱신
+// POST /refreshToken
+// body: { refreshToken }
+// ──────────────────────────────────────────
+const refreshTokenHandler = onRequest(async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+  const { refreshToken: token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: 'refreshToken 필수' });
+  }
+
+  try {
+    const result = await refreshToken(token);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(401).json({ error: e.message });
+  }
+});
+
+// ──────────────────────────────────────────
 // FCM 토큰 업데이트
 // POST /updateFcmToken
 // body: { userId, fcmToken }
@@ -61,4 +86,9 @@ const updateFcmTokenHandler = onRequest(async (req, res) => {
   }
 });
 
-module.exports = { registerHandler, loginHandler, updateFcmTokenHandler };
+module.exports = {
+  registerHandler,
+  loginHandler,
+  refreshTokenHandler,
+  updateFcmTokenHandler,
+};
