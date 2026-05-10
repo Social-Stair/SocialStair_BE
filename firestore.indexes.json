@@ -1,63 +1,36 @@
 {
   "indexes": [
     {
-      "collectionGroup": "tags",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "cardUid",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "stairRecords",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "weekKey",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "weekKey", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
       "collectionGroup": "weeklyGoals",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "weekKey",
-          "order": "ASCENDING"
-        }
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "weekKey", "order": "ASCENDING" }
       ]
     },
     {
       "collectionGroup": "userDailyStatus",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "date",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "skipToday",
-          "order": "ASCENDING"
-        }
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "skipToday", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "sentAt", "order": "DESCENDING" }
       ]
     }
   ],

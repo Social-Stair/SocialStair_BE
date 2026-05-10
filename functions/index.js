@@ -19,6 +19,10 @@ const {
 const { getHomeStatsHandler } = require('./routes/statsRoutes');
 const { skipTodayHandler } = require('./routes/dailyStatusRoutes');
 const {
+  getNotificationsHandler,
+  markNotificationReadHandler,
+} = require('./routes/notificationRoutes');
+const {
   weeklyGoalReminder,
   morningReminder,
   afternoonReminder,
@@ -58,6 +62,12 @@ exports.getHomeStats = getHomeStatsHandler;
 // 출근 여부 API
 // ──────────────────────────────────────────
 exports.skipToday = skipTodayHandler;
+
+// ──────────────────────────────────────────
+// 알림 히스토리 API
+// ──────────────────────────────────────────
+exports.getNotifications = getNotificationsHandler;
+exports.markNotificationRead = markNotificationReadHandler;
 
 // ──────────────────────────────────────────
 // 알림 스케줄러

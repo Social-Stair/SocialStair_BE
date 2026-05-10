@@ -113,13 +113,31 @@ const recordStairs = async (userId, records) => {
 
   if (prevRate < 1 / 3 && currentRate >= 1 / 3) {
     milestone = milestoneMessages.oneThird[week];
-    if (fcmToken) await sendToUser(fcmToken, milestone.title, milestone.body);
+    await sendToUser(
+      fcmToken,
+      milestone.title,
+      milestone.body,
+      'milestone_33',
+      userId
+    );
   } else if (prevRate < 2 / 3 && currentRate >= 2 / 3) {
     milestone = milestoneMessages.twoThird[week];
-    if (fcmToken) await sendToUser(fcmToken, milestone.title, milestone.body);
+    await sendToUser(
+      fcmToken,
+      milestone.title,
+      milestone.body,
+      'milestone_66',
+      userId
+    );
   } else if (prevRate < 1 && currentRate >= 1) {
     milestone = milestoneMessages.complete[week];
-    if (fcmToken) await sendToUser(fcmToken, milestone.title, milestone.body);
+    await sendToUser(
+      fcmToken,
+      milestone.title,
+      milestone.body,
+      'milestone_100',
+      userId
+    );
   }
 
   // 기록 저장

@@ -1,7 +1,7 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { getFirestore } = require('firebase-admin/firestore');
-const { getMessaging } = require('firebase-admin/messaging');
 const { getSkippedUsers } = require('../services/dailyStatusService');
+const { sendToAll, sendToUser } = require('../services/notificationService');
 const {
   getWeekKey,
   getExperimentWeek,
@@ -9,34 +9,12 @@ const {
 } = require('../utils/dateUtils');
 
 // ──────────────────────────────────────────
-// 알림 발송 (skipToday 유저 제외)
-// ──────────────────────────────────────────
-const sendNotification = async (title, body, excludeUserIds = []) => {
-  const db = getFirestore();
-  const snap = await db.collection('users').get();
-
-  const tokens = snap.docs
-    .map((doc) => doc.data())
-    .filter((user) => !excludeUserIds.includes(user.userId))
-    .map((user) => user.fcmToken)
-    .filter((token) => token !== null && token !== undefined);
-
-  if (tokens.length === 0) return;
-
-  await getMessaging().sendEachForMulticast({
-    tokens,
-    notification: { title, body },
-  });
-};
-
-// ──────────────────────────────────────────
 // 주차 + 요일별 오전 메시지
 // ──────────────────────────────────────────
 const getMorningMessage = () => {
   const week = getExperimentWeek();
-  const day = getDayKST(); // KST 기준 요일
+  const day = getDayKST();
 
-  // 실험 기간 외
   if (!week) return null;
 
   const messages = {
@@ -157,11 +135,12 @@ const weeklyGoalReminder = onSchedule(
   { schedule: '0 11 * * 0', timeZone: 'UTC' },
   async () => {
     const week = getExperimentWeek();
-    if (!week) return; // 실험 기간 외
+    if (!week) return;
 
-    await sendNotification(
+    await sendToAll(
       '이번 주 목표를 설정해주세요! 🎯',
-      '이번 주 계단 목표 층수를 입력해주세요'
+      '이번 주 계단 목표 층수를 입력해주세요',
+      'weeklyGoal'
     );
     console.log('목표 설정 알림 발송 완료');
   }
@@ -175,9 +154,9 @@ const morningReminder = onSchedule(
   { schedule: '0 1 * * 1-6', timeZone: 'UTC' },
   async () => {
     const message = getMorningMessage();
-    if (!message) return; // 실험 기간 외 or 메시지 없음
+    if (!message) return;
 
-    await sendNotification(message.title, message.body);
+    await sendToAll(message.title, message.body, 'morning');
     console.log('오전 알림 발송 완료');
   }
 );
@@ -190,12 +169,13 @@ const morningReminder = onSchedule(
 const afternoonReminder = onSchedule(
   { schedule: '0 5 * * 1-6', timeZone: 'UTC' },
   async () => {
-    if (!getExperimentWeek()) return; // 실험 기간 외
+    if (!getExperimentWeek()) return;
 
     const skippedUsers = await getSkippedUsers();
-    await sendNotification(
+    await sendToAll(
       '계단 기록을 입력해주세요! 🏃',
       '오후에 오른 계단을 기록해주세요',
+      'afternoon',
       skippedUsers
     );
     console.log('오후 알림 발송 완료');
@@ -210,12 +190,13 @@ const afternoonReminder = onSchedule(
 const eveningReminder = onSchedule(
   { schedule: '0 10 * * 1-6', timeZone: 'UTC' },
   async () => {
-    if (!getExperimentWeek()) return; // 실험 기간 외
+    if (!getExperimentWeek()) return;
 
     const skippedUsers = await getSkippedUsers();
-    await sendNotification(
+    await sendToAll(
       '계단 기록을 입력해주세요! 🏃',
       '저녁에 오른 계단을 기록해주세요',
+      'evening',
       skippedUsers
     );
     console.log('저녁 알림 발송 완료');
@@ -229,7 +210,7 @@ const eveningReminder = onSchedule(
 const wednesdayCheck = onSchedule(
   { schedule: '0 5 * * 3', timeZone: 'UTC' },
   async () => {
-    if (!getExperimentWeek()) return; // 실험 기간 외
+    if (!getExperimentWeek()) return;
 
     const db = getFirestore();
     const weekKey = getWeekKey();
@@ -256,13 +237,13 @@ const wednesdayCheck = onSchedule(
         const user = usersMap[userId];
         if (!user?.fcmToken) continue;
 
-        await getMessaging().send({
-          token: user.fcmToken,
-          notification: {
-            title: '한 주의 절반, 수요일입니다 💪',
-            body: '계단 이용은 별도의 운동 시간 없이 신체활동을 늘리는 효과적인 방법입니다 (Eves & Webb, 2006). 오늘 퇴근길에 가볍게 딱 2층만 계단으로 올라가 보는 것은 어떨까요?',
-          },
-        });
+        await sendToUser(
+          user.fcmToken,
+          '한 주의 절반, 수요일입니다 💪',
+          '계단 이용은 별도의 운동 시간 없이 신체활동을 늘리는 효과적인 방법입니다 (Eves & Webb, 2006). 오늘 퇴근길에 가볍게 딱 2층만 계단으로 올라가 보는 것은 어떨까요?',
+          'wednesday',
+          userId
+        );
       }
     }
     console.log('수요일 미달성 체크 완료');
@@ -277,7 +258,7 @@ const wednesdayCheck = onSchedule(
 const weeklyReset = onSchedule(
   { schedule: '0 10 * * 0', timeZone: 'UTC' },
   async () => {
-    if (!getExperimentWeek()) return; // 실험 기간 외
+    if (!getExperimentWeek()) return;
 
     const db = getFirestore();
     const weekKey = getWeekKey();

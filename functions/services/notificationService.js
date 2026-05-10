@@ -1,42 +1,69 @@
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getMessaging } = require('firebase-admin/messaging');
 
 // ──────────────────────────────────────────
-// 전체 유저 FCM 토큰 조회
+// 알림 Firestore 저장
+// iOS 웹앱 polling용
 // ──────────────────────────────────────────
-const getAllFcmTokens = async () => {
+const saveNotification = async (userId, type, title, body) => {
+  const db = getFirestore();
+  await db.collection('notifications').add({
+    userId,
+    type,
+    title,
+    body,
+    sentAt: FieldValue.serverTimestamp(),
+    isRead: false,
+  });
+};
+
+// ──────────────────────────────────────────
+// 단일 유저에게 알림 발송 + Firestore 저장
+// ──────────────────────────────────────────
+const sendToUser = async (fcmToken, title, body, type, userId) => {
+  const messaging = getMessaging();
+
+  if (fcmToken) {
+    await messaging.send({
+      token: fcmToken,
+      notification: { title, body },
+    });
+  }
+
+  if (userId) {
+    await saveNotification(userId, type, title, body);
+  }
+};
+
+// ──────────────────────────────────────────
+// 전체 유저에게 알림 발송 + Firestore 저장
+// ──────────────────────────────────────────
+const sendToAll = async (title, body, type, excludeUserIds = []) => {
   const db = getFirestore();
   const snap = await db.collection('users').get();
-  return snap.docs
-    .map((doc) => doc.data().fcmToken)
+
+  const users = snap.docs
+    .map((doc) => doc.data())
+    .filter((user) => !excludeUserIds.includes(user.userId));
+
+  const tokens = users
+    .map((user) => user.fcmToken)
     .filter((token) => token !== null && token !== undefined);
-};
 
-// ──────────────────────────────────────────
-// 단일 유저에게 알림 발송
-// ──────────────────────────────────────────
-const sendToUser = async (fcmToken, title, body) => {
-  const messaging = getMessaging();
-  await messaging.send({
-    token: fcmToken,
-    notification: { title, body },
-  });
-};
+  // FCM 발송
+  if (tokens.length > 0) {
+    await getMessaging().sendEachForMulticast({
+      tokens,
+      notification: { title, body },
+    });
+  }
 
-// ──────────────────────────────────────────
-// 전체 유저에게 알림 발송
-// ──────────────────────────────────────────
-const sendToAll = async (title, body) => {
-  const tokens = await getAllFcmTokens();
-  if (tokens.length === 0) return;
+  // Firestore 저장 (전체 유저)
+  await Promise.all(
+    users.map((user) => saveNotification(user.userId, type, title, body))
+  );
 
-  const messaging = getMessaging();
-  await messaging.sendEachForMulticast({
-    tokens,
-    notification: { title, body },
-  });
-
-  console.log(`알림 발송 완료: ${tokens.length}명 / ${title}`);
+  console.log(`알림 발송 완료: ${users.length}명 / ${title}`);
 };
 
 // ──────────────────────────────────────────
@@ -57,18 +84,8 @@ const getMilestoneMessage = async (type) => {
   return { title: random.title, message: random.message };
 };
 
-// ──────────────────────────────────────────
-// 달성 알림 발송 (30%, 60%)
-// ──────────────────────────────────────────
-const sendMilestoneNotification = async (fcmToken, type) => {
-  const milestone = await getMilestoneMessage(type);
-  if (!milestone || !fcmToken) return;
-  await sendToUser(fcmToken, milestone.title, milestone.message);
-};
-
 module.exports = {
   sendToAll,
   sendToUser,
-  sendMilestoneNotification,
   getMilestoneMessage,
 };
