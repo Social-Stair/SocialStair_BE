@@ -6,18 +6,12 @@ const {
   updateFcmToken,
 } = require('../services/authService');
 
-// ──────────────────────────────────────────
-// 회원가입
-// POST /register
-// body: { email, password, nickname, floor }
-// ──────────────────────────────────────────
-const registerHandler = onRequest(async (req, res) => {
+const registerHandler = onRequest({ cors: true }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
   const { email, password, nickname, floor } = req.body;
   if (!email || !password || !nickname || !floor) {
     return res.status(400).json({ error: '모든 필드를 입력해주세요' });
   }
-
   try {
     const user = await register(email, password, nickname, floor);
     res.status(200).json(user);
@@ -26,18 +20,12 @@ const registerHandler = onRequest(async (req, res) => {
   }
 });
 
-// ──────────────────────────────────────────
-// 로그인
-// POST /login
-// body: { email, password }
-// ──────────────────────────────────────────
-const loginHandler = onRequest(async (req, res) => {
+const loginHandler = onRequest({ cors: true }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: '이메일과 비밀번호를 입력해주세요' });
   }
-
   try {
     const result = await login(email, password);
     res.status(200).json(result);
@@ -46,18 +34,12 @@ const loginHandler = onRequest(async (req, res) => {
   }
 });
 
-// ──────────────────────────────────────────
-// 토큰 갱신
-// POST /refreshToken
-// body: { refreshToken }
-// ──────────────────────────────────────────
-const refreshTokenHandler = onRequest(async (req, res) => {
+const refreshTokenHandler = onRequest({ cors: true }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
   const { refreshToken: token } = req.body;
   if (!token) {
     return res.status(400).json({ error: 'refreshToken 필수' });
   }
-
   try {
     const result = await refreshToken(token);
     res.status(200).json(result);
@@ -66,18 +48,12 @@ const refreshTokenHandler = onRequest(async (req, res) => {
   }
 });
 
-// ──────────────────────────────────────────
-// FCM 토큰 업데이트
-// POST /updateFcmToken
-// body: { userId, fcmToken }
-// ──────────────────────────────────────────
-const updateFcmTokenHandler = onRequest(async (req, res) => {
+const updateFcmTokenHandler = onRequest({ cors: true }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
   const { userId, fcmToken } = req.body;
   if (!userId || !fcmToken) {
     return res.status(400).json({ error: 'userId, fcmToken 필수' });
   }
-
   try {
     await updateFcmToken(userId, fcmToken);
     res.status(200).json({ success: true });
