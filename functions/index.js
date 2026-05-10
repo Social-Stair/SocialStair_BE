@@ -30,44 +30,45 @@ const {
   wednesdayCheck,
   weeklyReset,
 } = require('./schedulers/notificationScheduler');
+const { withCors } = require('./middlewares/corsMiddleware');
 
 initializeApp();
 
 // ──────────────────────────────────────────
 // 인증 API
 // ──────────────────────────────────────────
-exports.register = registerHandler;
-exports.login = loginHandler;
-exports.refreshToken = refreshTokenHandler;
-exports.updateFcmToken = updateFcmTokenHandler;
+exports.register = withCors(registerHandler);
+exports.login = withCors(loginHandler);
+exports.refreshToken = withCors(refreshTokenHandler);
+exports.updateFcmToken = withCors(updateFcmTokenHandler);
 
 // ──────────────────────────────────────────
 // 목표 설정 API
 // ──────────────────────────────────────────
-exports.setGoal = setGoalHandler;
-exports.getGoal = getGoalHandler;
+exports.setGoal = withCors(setGoalHandler);
+exports.getGoal = withCors(getGoalHandler);
 
 // ──────────────────────────────────────────
 // 계단 기록 API
 // ──────────────────────────────────────────
-exports.recordStairs = recordStairsHandler;
-exports.getRecords = getRecordsHandler;
+exports.recordStairs = withCors(recordStairsHandler);
+exports.getRecords = withCors(getRecordsHandler);
 
 // ──────────────────────────────────────────
 // 홈화면 통계 API
 // ──────────────────────────────────────────
-exports.getHomeStats = getHomeStatsHandler;
+exports.getHomeStats = withCors(getHomeStatsHandler);
 
 // ──────────────────────────────────────────
 // 출근 여부 API
 // ──────────────────────────────────────────
-exports.skipToday = skipTodayHandler;
+exports.skipToday = withCors(skipTodayHandler);
 
 // ──────────────────────────────────────────
 // 알림 히스토리 API
 // ──────────────────────────────────────────
-exports.getNotifications = getNotificationsHandler;
-exports.markNotificationRead = markNotificationReadHandler;
+exports.getNotifications = withCors(getNotificationsHandler);
+exports.markNotificationRead = withCors(markNotificationReadHandler);
 
 // ──────────────────────────────────────────
 // 알림 스케줄러
@@ -82,7 +83,7 @@ exports.weeklyReset = weeklyReset;
 // ──────────────────────────────────────────
 // 성찰일지 API
 // ──────────────────────────────────────────
-exports.createJournal = createJournalHandler;
-exports.getJournals = getJournalsHandler;
-exports.updateJournal = updateJournalHandler;
-exports.deleteJournal = deleteJournalHandler;
+exports.createJournal = withCors(createJournalHandler);
+exports.getJournals = withCors(getJournalsHandler);
+exports.updateJournal = withCors(updateJournalHandler);
+exports.deleteJournal = withCors(deleteJournalHandler);
