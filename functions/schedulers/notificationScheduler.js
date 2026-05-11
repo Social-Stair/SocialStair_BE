@@ -1,6 +1,5 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { getFirestore } = require('firebase-admin/firestore');
-const { getSkippedUsers } = require('../services/dailyStatusService');
 const { sendToAll, sendToUser } = require('../services/notificationService');
 const {
   getWeekKey,
@@ -128,11 +127,11 @@ const getUsersWithNoRecord = async () => {
 };
 
 // ──────────────────────────────────────────
-// 일요일 20:00 (KST) 목표 설정 알림
-// UTC 11:00 = KST 20:00
+// 일요일 19:00 (KST) 목표 설정 알림
+// UTC 10:00 = KST 19:00
 // ──────────────────────────────────────────
 const weeklyGoalReminder = onSchedule(
-  { schedule: '0 11 * * 0', timeZone: 'UTC' },
+  { schedule: '0 10 * * 0', timeZone: 'UTC' },
   async () => {
     const week = getExperimentWeek();
     if (!week) return;
@@ -163,7 +162,6 @@ const morningReminder = onSchedule(
 
 // ──────────────────────────────────────────
 // 월~토 14:00 (KST) 오후 알림
-// skipToday 유저 제외
 // UTC 05:00 = KST 14:00
 // ──────────────────────────────────────────
 const afternoonReminder = onSchedule(
@@ -171,12 +169,10 @@ const afternoonReminder = onSchedule(
   async () => {
     if (!getExperimentWeek()) return;
 
-    const skippedUsers = await getSkippedUsers();
     await sendToAll(
       '계단 기록을 입력해주세요! 🏃',
       '오후에 오른 계단을 기록해주세요',
-      'afternoon',
-      skippedUsers
+      'afternoon'
     );
     console.log('오후 알림 발송 완료');
   }
@@ -184,7 +180,6 @@ const afternoonReminder = onSchedule(
 
 // ──────────────────────────────────────────
 // 월~토 19:00 (KST) 저녁 알림
-// skipToday 유저 제외
 // UTC 10:00 = KST 19:00
 // ──────────────────────────────────────────
 const eveningReminder = onSchedule(
@@ -192,12 +187,10 @@ const eveningReminder = onSchedule(
   async () => {
     if (!getExperimentWeek()) return;
 
-    const skippedUsers = await getSkippedUsers();
     await sendToAll(
       '계단 기록을 입력해주세요! 🏃',
       '저녁에 오른 계단을 기록해주세요',
-      'evening',
-      skippedUsers
+      'evening'
     );
     console.log('저녁 알림 발송 완료');
   }
@@ -214,7 +207,6 @@ const wednesdayCheck = onSchedule(
 
     const db = getFirestore();
     const weekKey = getWeekKey();
-    const skippedUsers = await getSkippedUsers();
 
     const goalsSnap = await db
       .collection('weeklyGoals')
@@ -230,7 +222,6 @@ const wednesdayCheck = onSchedule(
 
     for (const doc of goalsSnap.docs) {
       const { userId, goalFloors, currentFloors } = doc.data();
-      if (skippedUsers.includes(userId)) continue;
 
       const rate = goalFloors > 0 ? currentFloors / goalFloors : 0;
       if (rate < 0.5) {
