@@ -15,6 +15,7 @@ const { setGoalHandler, getGoalHandler } = require('./routes/goalRoutes');
 const {
   recordStairsHandler,
   getRecordsHandler,
+  deleteRecordsHandler,
 } = require('./routes/stairsRoutes');
 const { getHomeStatsHandler } = require('./routes/statsRoutes');
 const { skipTodayHandler } = require('./routes/dailyStatusRoutes');
@@ -52,6 +53,7 @@ exports.getGoal = getGoalHandler;
 // ──────────────────────────────────────────
 exports.recordStairs = recordStairsHandler;
 exports.getRecords = getRecordsHandler;
+exports.deleteRecords = deleteRecordsHandler;
 
 // ──────────────────────────────────────────
 // 홈화면 통계 API

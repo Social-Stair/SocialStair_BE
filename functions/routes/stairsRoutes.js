@@ -1,5 +1,9 @@
 const { onRequest } = require('firebase-functions/v2/https');
-const { recordStairs, getRecords } = require('../services/stairsService');
+const {
+  recordStairs,
+  getRecords,
+  deleteRecords,
+} = require('../services/stairsService');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const { getWeekKey } = require('../utils/dateUtils');
 
@@ -32,4 +36,30 @@ const getRecordsHandler = onRequest({ cors: true }, async (req, res) => {
   }
 });
 
-module.exports = { recordStairsHandler, getRecordsHandler };
+// ──────────────────────────────────────────
+// 계단 기록 삭제 (여러 개 한번에)
+// DELETE /deleteRecords
+// body: { recordIds: ["id1", "id2", ...] }
+// ──────────────────────────────────────────
+const deleteRecordsHandler = onRequest({ cors: true }, async (req, res) => {
+  if (req.method !== 'DELETE')
+    return res.status(405).send('Method Not Allowed');
+  const decoded = await verifyToken(req, res);
+  if (!decoded) return;
+  const { recordIds } = req.body;
+  if (!recordIds || !Array.isArray(recordIds) || recordIds.length === 0) {
+    return res.status(400).json({ error: 'recordIds 필수 (배열)' });
+  }
+  try {
+    const result = await deleteRecords(decoded.uid, recordIds);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = {
+  recordStairsHandler,
+  getRecordsHandler,
+  deleteRecordsHandler,
+};

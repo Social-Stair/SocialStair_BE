@@ -3,23 +3,29 @@ const { getWeekKey } = require('../utils/dateUtils');
 
 // ──────────────────────────────────────────
 // 주간 목표 설정
-// /weeklyGoals/{userId}_{weekKey}에 저장
+// 기존 목표 있으면 goalFloors만 업데이트 (currentFloors 유지)
+// 새로운 주차면 새로 생성
 // ──────────────────────────────────────────
 const setGoal = async (userId, goalFloors) => {
   const db = getFirestore();
   const weekKey = getWeekKey();
   const docId = `${userId}_${weekKey}`;
 
-  await db.collection('weeklyGoals').doc(docId).set(
-    {
+  const existing = await db.collection('weeklyGoals').doc(docId).get();
+
+  if (existing.exists) {
+    // 기존 목표 있으면 goalFloors만 수정 (currentFloors 유지)
+    await db.collection('weeklyGoals').doc(docId).update({ goalFloors });
+  } else {
+    // 새로운 주차면 새로 생성
+    await db.collection('weeklyGoals').doc(docId).set({
       userId,
       weekKey,
       goalFloors,
       currentFloors: 0,
       createdAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
+    });
+  }
 
   return { userId, weekKey, goalFloors };
 };

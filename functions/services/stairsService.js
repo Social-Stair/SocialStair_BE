@@ -60,6 +60,7 @@ const getMilestoneMessages = (goalFloors) => {
 // - records 리스트로 받아서 저장
 // - withColleague true면 층수 2배 반영
 // - 1/3, 2/3, 100% 달성 시 milestone 반환
+// - recordId 반환 추가
 // ──────────────────────────────────────────
 const recordStairs = async (userId, records) => {
   const db = getFirestore();
@@ -159,6 +160,7 @@ const recordStairs = async (userId, records) => {
   ]);
 
   return {
+    recordId: recordRef.id, // ← 추가
     userId,
     addedFloors,
     totalFloors: newFloors,
@@ -184,4 +186,37 @@ const getRecords = async (userId, weekKey) => {
   return snap.docs.map((doc) => ({ recordId: doc.id, ...doc.data() }));
 };
 
-module.exports = { recordStairs, getRecords };
+// ──────────────────────────────────────────
+// 계단 기록 삭제
+// - stairRecords 삭제
+// - weeklyGoals.currentFloors 차감 (롤백)
+// ──────────────────────────────────────────
+const deleteRecord = async (userId, recordId) => {
+  const db = getFirestore();
+  const weekKey = getWeekKey();
+  const goalDocId = `${userId}_${weekKey}`;
+
+  // 기록 조회
+  const recordDoc = await db.collection('stairRecords').doc(recordId).get();
+  if (!recordDoc.exists) throw new Error('기록을 찾을 수 없습니다');
+
+  const recordData = recordDoc.data();
+
+  // 본인 기록인지 확인
+  if (recordData.userId !== userId) throw new Error('삭제 권한이 없습니다');
+
+  // 기록 삭제 + 층수 롤백
+  await Promise.all([
+    db.collection('stairRecords').doc(recordId).delete(),
+    db
+      .collection('weeklyGoals')
+      .doc(goalDocId)
+      .update({
+        currentFloors: FieldValue.increment(-recordData.totalFloors),
+      }),
+  ]);
+
+  return { recordId, deletedFloors: recordData.totalFloors };
+};
+
+module.exports = { recordStairs, getRecords, deleteRecord };
