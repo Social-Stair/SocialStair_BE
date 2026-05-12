@@ -60,14 +60,13 @@ const getMilestoneMessages = (goalFloors) => {
 // - records 리스트로 받아서 저장
 // - withColleague true면 층수 2배 반영
 // - 1/3, 2/3, 100% 달성 시 milestone 반환
-// - recordId 반환 추가
+// - recordId 반환
 // ──────────────────────────────────────────
 const recordStairs = async (userId, records) => {
   const db = getFirestore();
   const weekKey = getWeekKey();
   const goalDocId = `${userId}_${weekKey}`;
 
-  // 기록 계산
   const processedRecords = records.map((record) => {
     const floorsClimbed = Math.abs(record.toFloor - record.fromFloor);
     const appliedFloors = record.withColleague
@@ -89,7 +88,6 @@ const recordStairs = async (userId, records) => {
     0
   );
 
-  // 목표 + 유저 조회
   const [goalDoc, userDoc] = await Promise.all([
     db.collection('weeklyGoals').doc(goalDocId).get(),
     db.collection('users').doc(userId).get(),
@@ -103,11 +101,9 @@ const recordStairs = async (userId, records) => {
   const newFloors = prevFloors + addedFloors;
   const achievementRate = Math.round((newFloors / goalFloors) * 100);
 
-  // 주차 계산
   const week = getExperimentWeek() || 1;
   const milestoneMessages = getMilestoneMessages(goalFloors);
 
-  // milestone 체크 (1/3, 2/3, 100%)
   let milestone = null;
   const prevRate = prevFloors / goalFloors;
   const currentRate = newFloors / goalFloors;
@@ -141,7 +137,6 @@ const recordStairs = async (userId, records) => {
     );
   }
 
-  // 기록 저장
   const recordRef = db.collection('stairRecords').doc();
   await Promise.all([
     recordRef.set({
@@ -160,7 +155,7 @@ const recordStairs = async (userId, records) => {
   ]);
 
   return {
-    recordId: recordRef.id, // ← 추가
+    recordId: recordRef.id,
     userId,
     addedFloors,
     totalFloors: newFloors,
@@ -187,36 +182,50 @@ const getRecords = async (userId, weekKey) => {
 };
 
 // ──────────────────────────────────────────
-// 계단 기록 삭제
+// 계단 기록 삭제 (여러 개 한번에)
 // - stairRecords 삭제
 // - weeklyGoals.currentFloors 차감 (롤백)
 // ──────────────────────────────────────────
-const deleteRecord = async (userId, recordId) => {
+const deleteRecords = async (userId, recordIds) => {
   const db = getFirestore();
   const weekKey = getWeekKey();
   const goalDocId = `${userId}_${weekKey}`;
 
   // 기록 조회
-  const recordDoc = await db.collection('stairRecords').doc(recordId).get();
-  if (!recordDoc.exists) throw new Error('기록을 찾을 수 없습니다');
+  const recordDocs = await Promise.all(
+    recordIds.map((id) => db.collection('stairRecords').doc(id).get())
+  );
 
-  const recordData = recordDoc.data();
+  // 유효성 검사
+  for (const doc of recordDocs) {
+    if (!doc.exists) throw new Error(`기록을 찾을 수 없습니다: ${doc.id}`);
+    if (doc.data().userId !== userId) throw new Error('삭제 권한이 없습니다');
+  }
 
-  // 본인 기록인지 확인
-  if (recordData.userId !== userId) throw new Error('삭제 권한이 없습니다');
+  // 총 롤백 층수 계산
+  const totalDeletedFloors = recordDocs.reduce(
+    (sum, doc) => sum + doc.data().totalFloors,
+    0
+  );
 
-  // 기록 삭제 + 층수 롤백
+  // 일괄 삭제 + 층수 롤백
+  const batch = db.batch();
+  recordDocs.forEach((doc) => batch.delete(doc.ref));
+
   await Promise.all([
-    db.collection('stairRecords').doc(recordId).delete(),
+    batch.commit(),
     db
       .collection('weeklyGoals')
       .doc(goalDocId)
       .update({
-        currentFloors: FieldValue.increment(-recordData.totalFloors),
+        currentFloors: FieldValue.increment(-totalDeletedFloors),
       }),
   ]);
 
-  return { recordId, deletedFloors: recordData.totalFloors };
+  return {
+    deletedCount: recordIds.length,
+    deletedFloors: totalDeletedFloors,
+  };
 };
 
-module.exports = { recordStairs, getRecords, deleteRecord };
+module.exports = { recordStairs, getRecords, deleteRecords };
