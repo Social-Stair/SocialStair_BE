@@ -3,6 +3,17 @@ const { getWeekKey, getExperimentWeek } = require('../utils/dateUtils');
 const { sendToUser } = require('./notificationService');
 
 // ──────────────────────────────────────────
+// 이동 타입 ENUM
+// 계단만 목표 층수에 반영
+// ──────────────────────────────────────────
+const MOVE_TYPE = {
+  STAIRS: '계단',
+  ELEVATOR: '엘리베이터',
+  NO_MOVE: '이동없음',
+  NOT_WORK: '출근안함',
+};
+
+// ──────────────────────────────────────────
 // 주차별 달성 메시지
 // ──────────────────────────────────────────
 const getMilestoneMessages = (goalFloors) => {
@@ -58,7 +69,9 @@ const getMilestoneMessages = (goalFloors) => {
 // ──────────────────────────────────────────
 // 계단 기록 입력
 // - records 리스트로 받아서 저장
+// - type이 '계단'인 것만 층수 반영
 // - withColleague true면 층수 2배 반영
+// - 기본 type: '계단'
 // - 1/3, 2/3, 100% 달성 시 milestone 반환
 // - recordId 반환
 // ──────────────────────────────────────────
@@ -68,15 +81,22 @@ const recordStairs = async (userId, records) => {
   const goalDocId = `${userId}_${weekKey}`;
 
   const processedRecords = records.map((record) => {
+    const type = record.type ?? MOVE_TYPE.STAIRS; // 기본값: 계단
     const floorsClimbed = Math.abs(record.toFloor - record.fromFloor);
-    const appliedFloors = record.withColleague
-      ? floorsClimbed * 2
-      : floorsClimbed;
+
+    // 계단일 때만 층수 반영, 동료와 함께면 2배
+    const appliedFloors =
+      type === MOVE_TYPE.STAIRS
+        ? record.withColleague
+          ? floorsClimbed * 2
+          : floorsClimbed
+        : 0;
 
     return {
       fromFloor: record.fromFloor,
       toFloor: record.toFloor,
       time: record.time,
+      type,
       withColleague: record.withColleague ?? false,
       floorsClimbed,
       appliedFloors,
@@ -191,24 +211,20 @@ const deleteRecords = async (userId, recordIds) => {
   const weekKey = getWeekKey();
   const goalDocId = `${userId}_${weekKey}`;
 
-  // 기록 조회
   const recordDocs = await Promise.all(
     recordIds.map((id) => db.collection('stairRecords').doc(id).get())
   );
 
-  // 유효성 검사
   for (const doc of recordDocs) {
     if (!doc.exists) throw new Error(`기록을 찾을 수 없습니다: ${doc.id}`);
     if (doc.data().userId !== userId) throw new Error('삭제 권한이 없습니다');
   }
 
-  // 총 롤백 층수 계산
   const totalDeletedFloors = recordDocs.reduce(
     (sum, doc) => sum + doc.data().totalFloors,
     0
   );
 
-  // 일괄 삭제 + 층수 롤백
   const batch = db.batch();
   recordDocs.forEach((doc) => batch.delete(doc.ref));
 
