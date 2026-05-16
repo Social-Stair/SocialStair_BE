@@ -13,14 +13,29 @@ const getTodayKey = () => {
   return new Date().toISOString().split('T')[0];
 };
 
-const getWeekKey = () => {
-  const now = new Date();
-  const year = now.getFullYear();
+// ──────────────────────────────────────────
+// 특정 날짜 기준 주차 키 계산
+// ──────────────────────────────────────────
+const calcWeekKey = (date) => {
+  const year = date.getFullYear();
   const startOfYear = new Date(year, 0, 1);
   const week = Math.ceil(
-    ((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7
+    ((date - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7
   );
   return `${year}-W${String(week).padStart(2, '0')}`;
+};
+
+const getWeekKey = () => {
+  return calcWeekKey(new Date());
+};
+
+// ──────────────────────────────────────────
+// 다음 주차 키 계산
+// 일요일 목표 설정 시 다음 주차로 저장하기 위함
+// ──────────────────────────────────────────
+const getNextWeekKey = () => {
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  return calcWeekKey(nextWeek);
 };
 
 // ──────────────────────────────────────────
@@ -32,10 +47,9 @@ const getWeekKey = () => {
 const getExperimentWeek = () => {
   const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000);
 
-  if (nowKST < TEST_START) return null; // 실험 전
-  if (nowKST >= EXP_END) return null; // 실험 종료
-
-  if (nowKST < EXP_START) return 1; // 테스트 주간 → 1주차 메시지
+  if (nowKST < TEST_START) return null;
+  if (nowKST >= EXP_END) return null;
+  if (nowKST < EXP_START) return 1;
 
   const diffDays = Math.floor((nowKST - EXP_START) / (1000 * 60 * 60 * 24));
   const week = Math.floor(diffDays / 7) + 1;
@@ -52,4 +66,10 @@ const getDayKST = () => {
   return nowKST.getDay();
 };
 
-module.exports = { getTodayKey, getWeekKey, getExperimentWeek, getDayKST };
+module.exports = {
+  getTodayKey,
+  getWeekKey,
+  getNextWeekKey,
+  getExperimentWeek,
+  getDayKST,
+};

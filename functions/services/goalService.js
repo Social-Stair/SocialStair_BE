@@ -1,23 +1,24 @@
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { getWeekKey } = require('../utils/dateUtils');
+const { getWeekKey, getNextWeekKey, getDayKST } = require('../utils/dateUtils');
 
 // ──────────────────────────────────────────
 // 주간 목표 설정
+// 일요일이면 다음 주차 weekKey 사용
 // 기존 목표 있으면 goalFloors만 업데이트 (currentFloors 유지)
 // 새로운 주차면 새로 생성
 // ──────────────────────────────────────────
 const setGoal = async (userId, goalFloors) => {
   const db = getFirestore();
-  const weekKey = getWeekKey();
+
+  // 일요일이면 다음 주차 키로 저장
+  const weekKey = getDayKST() === 0 ? getNextWeekKey() : getWeekKey();
   const docId = `${userId}_${weekKey}`;
 
   const existing = await db.collection('weeklyGoals').doc(docId).get();
 
   if (existing.exists) {
-    // 기존 목표 있으면 goalFloors만 수정 (currentFloors 유지)
     await db.collection('weeklyGoals').doc(docId).update({ goalFloors });
   } else {
-    // 새로운 주차면 새로 생성
     await db.collection('weeklyGoals').doc(docId).set({
       userId,
       weekKey,
