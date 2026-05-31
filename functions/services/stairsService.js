@@ -1,5 +1,10 @@
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { getWeekKey, getExperimentWeek } = require('../utils/dateUtils');
+const {
+  getWeekKey,
+  getExperimentWeek,
+  getNextWeekKey,
+  getDayKST,
+} = require('../utils/dateUtils');
 const { sendToUser } = require('./notificationService');
 
 // ──────────────────────────────────────────
@@ -11,6 +16,14 @@ const MOVE_TYPE = {
   ELEVATOR: '엘리베이터',
   NO_MOVE: '이동없음',
   NOT_WORK: '출근안함',
+};
+
+// ──────────────────────────────────────────
+// 현재 유효한 weekKey 반환
+// 일요일이면 다음 주차 키 반환
+// ──────────────────────────────────────────
+const getEffectiveWeekKey = () => {
+  return getDayKST() === 0 ? getNextWeekKey() : getWeekKey();
 };
 
 // ──────────────────────────────────────────
@@ -72,19 +85,19 @@ const getMilestoneMessages = (goalFloors) => {
 // - type이 '계단'인 것만 층수 반영
 // - withColleague true면 층수 2배 반영
 // - 기본 type: '계단'
+// - 일요일이면 다음 주차 weekKey 사용
 // - 1/3, 2/3, 100% 달성 시 milestone 반환
 // - recordId 반환
 // ──────────────────────────────────────────
 const recordStairs = async (userId, records) => {
   const db = getFirestore();
-  const weekKey = getWeekKey();
+  const weekKey = getEffectiveWeekKey();
   const goalDocId = `${userId}_${weekKey}`;
 
   const processedRecords = records.map((record) => {
-    const type = record.type ?? MOVE_TYPE.STAIRS; // 기본값: 계단
+    const type = record.type ?? MOVE_TYPE.STAIRS;
     const floorsClimbed = Math.abs(record.toFloor - record.fromFloor);
 
-    // 계단일 때만 층수 반영, 동료와 함께면 2배
     const appliedFloors =
       type === MOVE_TYPE.STAIRS
         ? record.withColleague
@@ -208,7 +221,7 @@ const getRecords = async (userId, weekKey) => {
 // ──────────────────────────────────────────
 const deleteRecords = async (userId, recordIds) => {
   const db = getFirestore();
-  const weekKey = getWeekKey();
+  const weekKey = getEffectiveWeekKey();
   const goalDocId = `${userId}_${weekKey}`;
 
   const recordDocs = await Promise.all(

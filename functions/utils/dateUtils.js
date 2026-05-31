@@ -31,11 +31,12 @@ const getWeekKey = () => {
 
 // ──────────────────────────────────────────
 // 다음 주차 키 계산
-// 일요일 목표 설정 시 다음 주차로 저장하기 위함
+// 일요일 목표 설정 시 다음 월요일 기준 주차로 저장
 // ──────────────────────────────────────────
 const getNextWeekKey = () => {
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  return calcWeekKey(nextWeek);
+  // 다음날(월요일) 기준으로 주차 계산
+  const nextMonday = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000);
+  return calcWeekKey(nextMonday);
 };
 
 // ──────────────────────────────────────────
